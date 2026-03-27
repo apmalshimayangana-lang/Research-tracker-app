@@ -1,0 +1,115 @@
+import React, { useState } from "react";
+
+const tasksWeekday = [
+  { time: "6:00 AM", task: "Meditation", category: "🧘 Wellness" },
+  { time: "6:30 AM", task: "Exercise", category: "🧘 Wellness" },
+  { time: "7:00 AM", task: "Reading research papers", category: "📚 Learning", critical: true },
+  { time: "9:00 AM", task: "Cleaning", category: "🏠 Self-Care" },
+  { time: "10:00 AM", task: "Cold wash", category: "🏠 Self-Care" },
+  { time: "10:30 AM", task: "Python", category: "💻 Deep Work", critical: true },
+  { time: "12:30 PM", task: "Lunch & rest", category: "🍽️ Break" },
+  { time: "2:00 PM", task: "Academic writing", category: "💻 Deep Work", critical: true },
+  { time: "3:00 PM", task: "Excel practice", category: "💻 Deep Work" },
+  { time: "4:00 PM", task: "Machine learning", category: "💻 Deep Work" },
+  { time: "5:00 PM", task: "Clubs / content", category: "📚 Learning" },
+  { time: "6:00 PM", task: "Plan next day", category: "📝 Planning" },
+  { time: "6:30 PM", task: "Relax", category: "🌙 Evening" },
+  { time: "7:00 PM", task: "Movie time", category: "🌙 Evening", reward: true },
+  { time: "8:00 PM", task: "Warm shower", category: "🏠 Self-Care" },
+  { time: "9:00 PM", task: "Reading & sleep", category: "🌙 Evening" }
+];
+
+const tasksWeekend = [
+  { task: "Meditation", critical: true },
+  { task: "Exercise", critical: true },
+  { task: "Reading research papers", critical: true },
+  { task: "Academic writing", critical: true }
+];
+
+export default function App() {
+  const [isWeekend, setIsWeekend] = useState(false);
+  const [completed, setCompleted] = useState({});
+
+  const tasks = isWeekend ? tasksWeekend : tasksWeekday;
+
+  const toggleTask = (index) => {
+    setCompleted((prev) => ({ ...prev, [index]: !prev[index] }));
+  };
+
+  const total = tasks.length;
+  const done = Object.values(completed).filter(Boolean).length;
+  const percentage = Math.round((done / total) * 100);
+
+  const criticalFailed = tasks.some(
+    (t, i) => t.critical && !completed[i]
+  );
+
+  const punishment = criticalFailed
+    ? "🚫 No movie time tonight!"
+    : "🎉 You earned your movie time!";
+
+  return (
+    <div className="min-h-screen bg-pink-100 p-6 font-sans">
+      <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+        <h1 className="text-2xl font-bold text-pink-500 mb-4">
+          🌸 30 Day Research Tracker
+        </h1>
+
+        <button
+          onClick={() => {
+            setIsWeekend(!isWeekend);
+            setCompleted({});
+          }}
+          className="mb-4 px-4 py-2 bg-pink-300 rounded-lg"
+        >
+          Switch to {isWeekend ? "Weekday" : "Weekend"}
+        </button>
+
+        <div className="space-y-2">
+          {tasks.map((t, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between bg-pink-50 p-3 rounded-lg"
+            >
+              <div>
+                <p className="font-medium">
+                  {t.time && `${t.time} - `} {t.task}
+                </p>
+                <p className="text-sm text-gray-500">{t.category}</p>
+              </div>
+
+              <input
+                type="checkbox"
+                checked={!!completed[i]}
+                onChange={() => toggleTask(i)}
+                className="w-5 h-5 accent-pink-400"
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6">
+          <p className="font-semibold text-pink-600">
+            Progress: {percentage}%
+          </p>
+
+          <div className="w-full bg-pink-200 h-3 rounded-full mt-2">
+            <div
+              className="bg-pink-500 h-3 rounded-full"
+              style={{ width: `${percentage}%` }}
+            ></div>
+          </div>
+        </div>
+
+        <div className="mt-6 p-4 bg-pink-50 rounded-lg">
+          <p className="font-bold">Discipline Check:</p>
+          <p className="mt-2">{punishment}</p>
+        </div>
+
+        <div className="mt-4 text-sm text-gray-600">
+          🎯 Goal: Minimum 80% daily completion
+        </div>
+      </div>
+    </div>
+  );
+}
