@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Research Tracker</title>
+
+  <!-- Google Font for better emoji/icon support -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Segoe UI', 'Noto Color Emoji', Arial, sans-serif;
+      background: #ffe4ec;
+      padding: 20px;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 20px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #ff4d88;
+    }
+    .task {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+      background: #fff0f5;
+      margin-bottom: 8px;
+      border-radius: 10px;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background: #ffc0cb;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+    .progress {
+      height: 10px;
+      background: #ff4d88;
+      border-radius: 10px;
+      width: 0%;
+    }
+    .box {
+      margin-top: 20px;
+      padding: 15px;
+      background: #fff0f5;
+      border-radius: 10px;
+    }
+    button, select {
+      background: #ff99bb;
+      border: none;
+      padding: 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>30 Day Research Tracker</h1>
+
+  <div>
+    <label>Select Day:</label>
+    <select id="daySelector" onchange="loadDay()"></select>
+    <button onclick="toggleMode()">Switch Mode</button>
+  </div>
+
+  <div id="taskList"></div>
+
+  <h3>Daily Progress: <span id="progressText">0%</span></h3>
+  <div class="progress-bar"><div id="progressBar" class="progress"></div></div>
+
+  <div class="box" id="punishmentBox">Discipline check will appear here...</div>
+
+  <div class="box">
+    <h3>Monthly Progress</h3>
+    <p>Average: <span id="monthlyAvg">0%</span></p>
+    <p>Days Completed: <span id="daysDone">0</span>/30</p>
+  </div>
+
+  <p>Goal: Minimum 80% overall</p>
+</div>
+
+<script>
+  let isWeekend = false;
+  let currentDay = 1;
+
+  const weekdayTasks = [
+    { time: "6:00 AM", name: "Meditation" },
+    { time: "6:30 AM", name: "Exercise" },
+    { time: "7:00 AM", name: "Research Reading", critical: true },
+    { time: "9:00 AM", name: "Cleaning" },
+    { time: "10:00 AM", name: "Cold Wash" },
+    { time: "10:30 AM", name: "Python", critical: true },
+    { time: "12:30 PM", name: "Lunch" },
+    { time: "2:00 PM", name: "Academic Writing", critical: true },
+    { time: "3:00 PM", name: "Excel" },
+    { time: "4:00 PM", name: "Machine Learning" },
+    { time: "5:00 PM", name: "Other Work" },
+    { time: "6:00 PM", name: "Planning" },
+    { time: "6:30 PM", name: "Relax" },
+    { time: "7:00 PM", name: "Movie" },
+    { time: "8:00 PM", name: "Shower" },
+    { time: "9:00 PM", name: "Sleep Reading" }
+  ];
+
+  const weekendTasks = [
+    { name: "Meditation", critical: true },
+    { name: "Exercise", critical: true },
+    { name: "Research Reading", critical: true },
+    { name: "Academic Writing", critical: true }
+  ];
+
+  function getTasks() { return isWeekend ? weekendTasks : weekdayTasks; }
+
+  function renderTasks() {
+    const list = document.getElementById("taskList");
+    list.innerHTML = "";
+
+    const tasks = getTasks();
+    const saved = JSON.parse(localStorage.getItem("day"+currentDay)) || {};
+
+    tasks.forEach((task, index) => {
+      const div = document.createElement("div");
+      div.className = "task";
+
+      div.innerHTML = `
+        <span>${task.time ? task.time + " - " : ""}${task.name}</span>
+        <input type="checkbox" ${saved[index]?"checked":""} onchange="updateProgress()" id="task${index}">
+      `;
+
+      list.appendChild(div);
+    });
+
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const tasks = getTasks();
+    let done = 0;
+    let state = {};
+
+    tasks.forEach((_, i) => {
+      const checked = document.getElementById("task"+i).checked;
+      if (checked) done++;
+      state[i] = checked;
+    });
+
+    localStorage.setItem("day"+currentDay, JSON.stringify(state));
+
+    const percent = Math.round((done / tasks.length) * 100);
+
+    document.getElementById("progressText").innerText = percent + "%";
+    document.getElementById("progressBar").style.width = percent + "%";
+
+    checkDiscipline();
+    updateMonthly();
+  }
+
+  function checkDiscipline() {
+    const tasks = getTasks();
+    let failed = false;
+
+    tasks.forEach((task, i) => {
+      if (task.critical && !document.getElementById("task"+i).checked) failed = true;
+    });
+
+    document.getElementById("punishmentBox").innerHTML = failed
+      ? "No movie time tonight!"
+      : "You earned your movie time!";
+  }
+
+  function updateMonthly() {
+    let total = 0;
+    let count = 0;
+
+    for (let d=1; d<=30; d++) {
+      const data = JSON.parse(localStorage.getItem("day"+d));
+      if (data) {
+        const values = Object.values(data);
+        const percent = Math.round(values.filter(v=>v).length / values.length * 100);
+        total += percent;
+        count++;
+      }
+    }
+
+    const avg = count ? Math.round(total/count) : 0;
+    document.getElementById("monthlyAvg").innerText = avg + "%";
+    document.getElementById("daysDone").innerText = count;
+  }
+
+  function toggleMode() {
+    isWeekend = !isWeekend;
+    renderTasks();
+  }
+
+  function loadDay() {
+    currentDay = document.getElementById("daySelector").value;
+    renderTasks();
+  }
+
+  function initDays() {
+    const select = document.getElementById("daySelector");
+    for (let i=1;i<=30;i++) {
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.text = "Day " + i;
+      select.appendChild(opt);
+    }
+  }
+
+  initDays();
+  renderTasks();
+</script>
+
+</body>
+</html>
